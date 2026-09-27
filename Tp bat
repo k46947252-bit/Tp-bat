@@ -1,0 +1,1081 @@
+--// 🦇 BAT TP — ALL SCRIPT MOG
+--// LocalScript
+--// V1 = 0.15 | V2 = 0.07 | V3 = 0.30 -> 0.01
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local LP = Players.LocalPlayer
+local PG = LP:WaitForChild("PlayerGui")
+
+local KEY = "675242"
+local DISCORD = "https://discord.gg/XVQSyBaDy"
+
+local interval = 0.15
+local tpEnabled = false
+local locked = false
+local distanceEnabled = true
+local distanceObjects = {}
+local playerStates = {}
+
+--==================================================
+-- GUI
+--==================================================
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "BAT_TP_ALL_SCRIPT_MOG"
+Gui.ResetOnSpawn = false
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.Parent = PG
+
+local function corner(o,r)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0,r)
+	c.Parent = o
+end
+
+local function stroke(o,t)
+	local s = Instance.new("UIStroke")
+	s.Thickness = 1
+	s.Transparency = t or .5
+	s.Parent = o
+	return s
+end
+
+local function button(parent,text)
+	local b = Instance.new("TextButton")
+	b.BackgroundColor3 = Color3.fromRGB(30,31,39)
+	b.BorderSizePixel = 0
+	b.Text = text
+	b.TextColor3 = Color3.fromRGB(235,235,240)
+	b.TextSize = 13
+	b.Font = Enum.Font.GothamMedium
+	b.AutoButtonColor = false
+	b.Parent = parent
+	corner(b,10)
+	stroke(b,.65)
+	return b
+end
+
+--==================================================
+-- KEY MENU
+--==================================================
+
+local KeyFrame = Instance.new("Frame")
+KeyFrame.Size = UDim2.fromOffset(390,270)
+KeyFrame.Position = UDim2.new(.5,-195,.5,-135)
+KeyFrame.BackgroundColor3 = Color3.fromRGB(15,16,21)
+KeyFrame.BorderSizePixel = 0
+KeyFrame.Parent = Gui
+corner(KeyFrame,18)
+stroke(KeyFrame,.2)
+
+local KeyTitle = Instance.new("TextLabel")
+KeyTitle.Size = UDim2.new(1,-40,0,40)
+KeyTitle.Position = UDim2.fromOffset(20,15)
+KeyTitle.BackgroundTransparency = 1
+KeyTitle.Text = "🦇  BAT TP"
+KeyTitle.TextXAlignment = Enum.TextXAlignment.Left
+KeyTitle.TextColor3 = Color3.new(1,1,1)
+KeyTitle.TextSize = 25
+KeyTitle.Font = Enum.Font.GothamBold
+KeyTitle.Parent = KeyFrame
+
+local KeySub = Instance.new("TextLabel")
+KeySub.Size = UDim2.new(1,-40,0,25)
+KeySub.Position = UDim2.fromOffset(20,52)
+KeySub.BackgroundTransparency = 1
+KeySub.Text = "ALL SCRIPT MOG"
+KeySub.TextXAlignment = Enum.TextXAlignment.Left
+KeySub.TextColor3 = Color3.fromRGB(110,113,125)
+KeySub.TextSize = 12
+KeySub.Parent = KeyFrame
+
+local KeyBox = Instance.new("TextBox")
+KeyBox.Size = UDim2.new(1,-40,0,43)
+KeyBox.Position = UDim2.fromOffset(20,88)
+KeyBox.BackgroundColor3 = Color3.fromRGB(27,28,35)
+KeyBox.BorderSizePixel = 0
+KeyBox.PlaceholderText = "Введите ключ"
+KeyBox.PlaceholderColor3 = Color3.fromRGB(100,102,112)
+KeyBox.Text = ""
+KeyBox.TextColor3 = Color3.new(1,1,1)
+KeyBox.TextSize = 14
+KeyBox.ClearTextOnFocus = false
+KeyBox.Parent = KeyFrame
+corner(KeyBox,10)
+
+local Check = button(KeyFrame,"✓  ПРОВЕРИТЬ КЛЮЧ")
+Check.Size = UDim2.new(.46,0,0,42)
+Check.Position = UDim2.fromOffset(20,145)
+Check.BackgroundColor3 = Color3.fromRGB(48,105,68)
+
+local GetKey = button(KeyFrame,"🔑  ПОЛУЧИТЬ КЛЮЧ")
+GetKey.Size = UDim2.new(.46,0,0,42)
+GetKey.Position = UDim2.new(.54,-0,0,145)
+
+local KeyStatus = Instance.new("TextLabel")
+KeyStatus.Size = UDim2.new(1,-40,0,30)
+KeyStatus.Position = UDim2.fromOffset(20,200)
+KeyStatus.BackgroundTransparency = 1
+KeyStatus.Text = ""
+KeyStatus.TextColor3 = Color3.fromRGB(150,152,160)
+KeyStatus.TextSize = 12
+KeyStatus.Parent = KeyFrame
+
+--==================================================
+-- NOTIFICATION
+--==================================================
+
+local NotifyFrame = Instance.new("Frame")
+NotifyFrame.Size = UDim2.fromOffset(350,70)
+NotifyFrame.Position = UDim2.new(.5,-175,-.15,0)
+NotifyFrame.BackgroundColor3 = Color3.fromRGB(20,21,27)
+NotifyFrame.BorderSizePixel = 0
+NotifyFrame.Visible = false
+NotifyFrame.ZIndex = 100
+NotifyFrame.Parent = Gui
+corner(NotifyFrame,14)
+stroke(NotifyFrame,.2)
+
+local NotifyText = Instance.new("TextLabel")
+NotifyText.Size = UDim2.fromScale(1,1)
+NotifyText.BackgroundTransparency = 1
+NotifyText.TextColor3 = Color3.new(1,1,1)
+NotifyText.TextSize = 18
+NotifyText.Font = Enum.Font.GothamBold
+NotifyText.ZIndex = 101
+NotifyText.Parent = NotifyFrame
+
+local function notify(text)
+
+	NotifyText.Text = text
+	NotifyFrame.Visible = true
+	NotifyFrame.Position = UDim2.new(.5,-175,-.15,0)
+
+	local open = TweenService:Create(
+		NotifyFrame,
+		TweenInfo.new(.25),
+		{Position=UDim2.new(.5,-175,.04,0)}
+	)
+
+	open:Play()
+
+	task.delay(1.4,function()
+
+		local close = TweenService:Create(
+			NotifyFrame,
+			TweenInfo.new(.25),
+			{Position=UDim2.new(.5,-175,-.15,0)}
+		)
+
+		close:Play()
+
+		task.wait(.25)
+
+		NotifyFrame.Visible = false
+	end)
+end
+
+--==================================================
+-- MAIN
+--==================================================
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.fromOffset(440,390)
+Main.Position = UDim2.new(.5,-220,.5,-195)
+Main.BackgroundColor3 = Color3.fromRGB(15,16,21)
+Main.BorderSizePixel = 0
+Main.Visible = false
+Main.Active = true
+Main.Parent = Gui
+corner(Main,20)
+stroke(Main,.2)
+
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1,0,0,65)
+Header.BackgroundTransparency = 1
+Header.Parent = Main
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1,-80,0,35)
+Title.Position = UDim2.fromOffset(20,10)
+Title.BackgroundTransparency = 1
+Title.Text = "🦇  BAT TP"
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.TextColor3 = Color3.new(1,1,1)
+Title.TextSize = 24
+Title.Font = Enum.Font.GothamBold
+Title.Parent = Header
+
+local Sub = Instance.new("TextLabel")
+Sub.Size = UDim2.new(1,-80,0,20)
+Sub.Position = UDim2.fromOffset(20,39)
+Sub.BackgroundTransparency = 1
+Sub.Text = "ALL SCRIPT MOG  •  CONTROL PANEL"
+Sub.TextXAlignment = Enum.TextXAlignment.Left
+Sub.TextColor3 = Color3.fromRGB(100,103,115)
+Sub.TextSize = 10
+Sub.Parent = Header
+
+local Minimize = Instance.new("TextButton")
+Minimize.Size = UDim2.fromOffset(34,34)
+Minimize.Position = UDim2.new(1,-50,0,13)
+Minimize.BackgroundColor3 = Color3.fromRGB(30,31,38)
+Minimize.BorderSizePixel = 0
+Minimize.Text = "×"
+Minimize.TextColor3 = Color3.new(1,1,1)
+Minimize.TextSize = 21
+Minimize.Parent = Header
+corner(Minimize,10)
+
+local StatusBox = Instance.new("Frame")
+StatusBox.Size = UDim2.new(1,-40,0,50)
+StatusBox.Position = UDim2.fromOffset(20,72)
+StatusBox.BackgroundColor3 = Color3.fromRGB(24,25,32)
+StatusBox.BorderSizePixel = 0
+StatusBox.Parent = Main
+corner(StatusBox,11)
+
+local Dot = Instance.new("Frame")
+Dot.Size = UDim2.fromOffset(9,9)
+Dot.Position = UDim2.fromOffset(15,20)
+Dot.BackgroundColor3 = Color3.fromRGB(210,60,65)
+Dot.BorderSizePixel = 0
+Dot.Parent = StatusBox
+corner(Dot,10)
+
+local Status = Instance.new("TextLabel")
+Status.Size = UDim2.new(1,-40,1,0)
+Status.Position = UDim2.fromOffset(35,0)
+Status.BackgroundTransparency = 1
+Status.Text = "BAT TP  •  OFF"
+Status.TextXAlignment = Enum.TextXAlignment.Left
+Status.TextColor3 = Color3.new(1,1,1)
+Status.TextSize = 13
+Status.Parent = StatusBox
+
+--==================================================
+-- MODE BUTTONS
+--==================================================
+
+local Modes = Instance.new("Frame")
+Modes.Size = UDim2.new(1,-40,0,58)
+Modes.Position = UDim2.fromOffset(20,132)
+Modes.BackgroundTransparency = 1
+Modes.Parent = Main
+
+local Layout = Instance.new("UIListLayout")
+Layout.FillDirection = Enum.FillDirection.Horizontal
+Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+Layout.Padding = UDim.new(0,8)
+Layout.Parent = Modes
+
+local V1 = button(Modes,"V1\n0.15 SEC")
+V1.Size = UDim2.fromOffset(128,55)
+
+local V2 = button(Modes,"V2\n0.07 SEC")
+V2.Size = UDim2.fromOffset(128,55)
+
+local V3 = button(Modes,"V3\nCUSTOM")
+V3.Size = UDim2.fromOffset(128,55)
+
+local function selectMode(b)
+
+	for _,x in ipairs({V1,V2,V3}) do
+		x.BackgroundColor3 = Color3.fromRGB(30,31,39)
+	end
+
+	b.BackgroundColor3 = Color3.fromRGB(55,90,165)
+end
+
+selectMode(V1)
+
+--==================================================
+-- TP
+--==================================================
+
+local TP = button(Main,"BAT TP  •  OFF")
+TP.Size = UDim2.new(1,-40,0,44)
+TP.Position = UDim2.fromOffset(20,200)
+TP.BackgroundColor3 = Color3.fromRGB(115,50,55)
+
+--==================================================
+-- OTHER BUTTONS
+--==================================================
+
+local PlayersButton = button(Main,"👥 PLAYERS")
+PlayersButton.Size = UDim2.new(1,-40,0,40)
+PlayersButton.Position = UDim2.fromOffset(20,254)
+
+local DistanceButton = button(Main,"DISTANCE  ON")
+DistanceButton.Size = UDim2.new(.46,0,0,38)
+DistanceButton.Position = UDim2.fromOffset(20,306)
+
+local LockButton = button(Main,"🔓 UNLOCK")
+LockButton.Size = UDim2.new(.46,0,0,38)
+LockButton.Position = UDim2.new(.54,0,0,306)
+
+--==================================================
+-- V3
+--==================================================
+
+local V3Frame = Instance.new("Frame")
+V3Frame.Size = UDim2.fromOffset(390,210)
+V3Frame.Position = UDim2.new(.5,-195,.5,-105)
+V3Frame.BackgroundColor3 = Color3.fromRGB(17,18,23)
+V3Frame.BorderSizePixel = 0
+V3Frame.Visible = false
+V3Frame.ZIndex = 50
+V3Frame.Parent = Gui
+corner(V3Frame,17)
+stroke(V3Frame,.2)
+
+local V3Title = Instance.new("TextLabel")
+V3Title.Size = UDim2.new(1,-30,0,30)
+V3Title.Position = UDim2.fromOffset(15,12)
+V3Title.BackgroundTransparency = 1
+V3Title.Text = "⚙ V3 CUSTOM"
+V3Title.TextXAlignment = Enum.TextXAlignment.Left
+V3Title.TextColor3 = Color3.new(1,1,1)
+V3Title.TextSize = 17
+V3Title.Font = Enum.Font.GothamBold
+V3Title.ZIndex = 51
+V3Title.Parent = V3Frame
+
+local V3Value = Instance.new("TextLabel")
+V3Value.Size = UDim2.new(1,-30,0,35)
+V3Value.Position = UDim2.fromOffset(15,45)
+V3Value.BackgroundTransparency = 1
+V3Value.Text = "0.15 SEC"
+V3Value.TextColor3 = Color3.fromRGB(90,145,255)
+V3Value.TextSize = 22
+V3Value.Font = Enum.Font.GothamBold
+V3Value.ZIndex = 51
+V3Value.Parent = V3Frame
+
+local Slider = Instance.new("Frame")
+Slider.Size = UDim2.new(1,-50,0,8)
+Slider.Position = UDim2.fromOffset(25,95)
+Slider.BackgroundColor3 = Color3.fromRGB(45,46,54)
+Slider.BorderSizePixel = 0
+Slider.ZIndex = 51
+Slider.Parent = V3Frame
+corner(Slider,10)
+
+local Fill = Instance.new("Frame")
+Fill.Size = UDim2.new(.5,0,1,0)
+Fill.BackgroundColor3 = Color3.fromRGB(70,120,225)
+Fill.BorderSizePixel = 0
+Fill.ZIndex = 52
+Fill.Parent = Slider
+corner(Fill,10)
+
+local Knob = Instance.new("TextButton")
+Knob.Size = UDim2.fromOffset(22,22)
+Knob.AnchorPoint = Vector2.new(.5,.5)
+Knob.Position = UDim2.new(.5,0,.5,0)
+Knob.BackgroundColor3 = Color3.new(1,1,1)
+Knob.BorderSizePixel = 0
+Knob.Text = ""
+Knob.ZIndex = 53
+Knob.Parent = Slider
+corner(Knob,20)
+
+local ApplyV3 = button(V3Frame,"✓ ПРИМЕНИТЬ")
+ApplyV3.Size = UDim2.new(1,-30,0,38)
+ApplyV3.Position = UDim2.fromOffset(15,145)
+ApplyV3.ZIndex = 51
+
+local sliding = false
+
+local function setSlider(x)
+
+	local left = Slider.AbsolutePosition.X
+	local width = Slider.AbsoluteSize.X
+
+	local a = math.clamp((x-left)/width,0,1)
+
+	interval = math.floor((.30-(.29*a))*100+.5)/100
+
+	Fill.Size = UDim2.new(a,0,1,0)
+	Knob.Position = UDim2.new(a,0,.5,0)
+	V3Value.Text = string.format("%.2f SEC",interval)
+end
+
+Knob.MouseButton1Down:Connect(function()
+	sliding = true
+end)
+
+Slider.InputBegan:Connect(function(i)
+	if i.UserInputType == Enum.UserInputType.MouseButton1
+	or i.UserInputType == Enum.UserInputType.Touch then
+		sliding = true
+		setSlider(i.Position.X)
+	end
+end)
+
+UIS.InputChanged:Connect(function(i)
+	if sliding and
+		(i.UserInputType == Enum.UserInputType.MouseMovement
+		or i.UserInputType == Enum.UserInputType.Touch) then
+		setSlider(i.Position.X)
+	end
+end)
+
+UIS.InputEnded:Connect(function(i)
+	if i.UserInputType == Enum.UserInputType.MouseButton1
+	or i.UserInputType == Enum.UserInputType.Touch then
+		sliding = false
+	end
+end)
+
+V1.MouseButton1Click:Connect(function()
+	interval = .15
+	selectMode(V1)
+end)
+
+V2.MouseButton1Click:Connect(function()
+	interval = .07
+	selectMode(V2)
+end)
+
+V3.MouseButton1Click:Connect(function()
+	selectMode(V3)
+	V3Frame.Visible = true
+end)
+
+ApplyV3.MouseButton1Click:Connect(function()
+	V3Frame.Visible = false
+end)
+
+--==================================================
+-- NEAREST PLAYER
+--==================================================
+
+local function nearestPlayer()
+
+	local char = LP.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart")
+
+	if not root then
+		return nil
+	end
+
+	local closest
+	local distance = math.huge
+
+	for _,p in ipairs(Players:GetPlayers()) do
+
+		if p ~= LP then
+
+			local c = p.Character
+			local r = c and c:FindFirstChild("HumanoidRootPart")
+			local h = c and c:FindFirstChildOfClass("Humanoid")
+
+			if r and h and h.Health > 0 then
+
+				local d = (root.Position-r.Position).Magnitude
+
+				if d < distance then
+					distance = d
+					closest = p
+				end
+			end
+		end
+	end
+
+	return closest
+end
+
+local function tpTo(p)
+
+	if not p or p == LP then
+		return
+	end
+
+	local myChar = LP.Character
+	local targetChar = p.Character
+
+	local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+	local targetRoot = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+
+	if myRoot and targetRoot then
+
+		local pos =
+			targetRoot.Position
+			- targetRoot.CFrame.LookVector * 3
+
+		myChar:PivotTo(
+			CFrame.lookAt(pos,targetRoot.Position)
+		)
+	end
+end
+
+--==================================================
+-- TP LOOP
+--==================================================
+
+local loopRunning = false
+
+local function startTP()
+
+	if loopRunning then
+		return
+	end
+
+	loopRunning = true
+
+	task.spawn(function()
+
+		while tpEnabled do
+
+			local p = nearestPlayer()
+
+			if p then
+				tpTo(p)
+			end
+
+			task.wait(math.max(interval,.01))
+		end
+
+		loopRunning = false
+	end)
+end
+
+TP.MouseButton1Click:Connect(function()
+
+	tpEnabled = not tpEnabled
+
+	if tpEnabled then
+
+		TP.Text = "BAT TP  •  ON"
+		TP.BackgroundColor3 = Color3.fromRGB(48,135,72)
+
+		Status.Text = "BAT TP  •  ACTIVE"
+		Dot.BackgroundColor3 = Color3.fromRGB(60,210,105)
+
+		startTP()
+
+	else
+
+		TP.Text = "BAT TP  •  OFF"
+		TP.BackgroundColor3 = Color3.fromRGB(115,50,55)
+
+		Status.Text = "BAT TP  •  OFF"
+		Dot.BackgroundColor3 = Color3.fromRGB(210,60,65)
+	end
+end)
+
+--==================================================
+-- DISTANCE
+--==================================================
+
+local function makeDistance(p)
+
+	if p == LP then
+		return
+	end
+
+	local c = p.Character
+
+	if not c then
+		return
+	end
+
+	local root = c:FindFirstChild("HumanoidRootPart")
+
+	if not root then
+		return
+	end
+
+	if distanceObjects[c] then
+		distanceObjects[c]:Destroy()
+	end
+
+	local bg = Instance.new("BillboardGui")
+	bg.Name = "BAT_DISTANCE"
+	bg.Size = UDim2.fromOffset(110,30)
+	bg.StudsOffset = Vector3.new(0,3.2,0)
+	bg.AlwaysOnTop = true
+	bg.MaxDistance = 10000
+	bg.Enabled = distanceEnabled
+	bg.Parent = root
+
+	local text = Instance.new("TextLabel")
+	text.Size = UDim2.fromScale(1,1)
+	text.BackgroundColor3 = Color3.fromRGB(15,16,21)
+	text.BackgroundTransparency = .15
+	text.BorderSizePixel = 0
+	text.Text = "0 studs"
+	text.TextColor3 = Color3.fromRGB(235,240,255)
+	text.TextSize = 12
+	text.Font = Enum.Font.GothamBold
+	text.Parent = bg
+
+	corner(text,7)
+
+	distanceObjects[c] = bg
+end
+
+local function updateDistances()
+
+	if not distanceEnabled then
+		return
+	end
+
+	local myChar = LP.Character
+	local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+
+	if not myRoot then
+		return
+	end
+
+	for _,p in ipairs(Players:GetPlayers()) do
+
+		if p ~= LP then
+
+			local c = p.Character
+			local r = c and c:FindFirstChild("HumanoidRootPart")
+
+			if c and r then
+
+				if not distanceObjects[c] then
+					makeDistance(p)
+				end
+
+				local bg = distanceObjects[c]
+
+				if bg then
+
+					local label = bg:FindFirstChildOfClass("TextLabel")
+
+					if label then
+						local d = (myRoot.Position-r.Position).Magnitude
+						label.Text = math.floor(d+.5).." studs"
+					end
+				end
+			end
+		end
+	end
+end
+
+task.spawn(function()
+
+	while Gui.Parent do
+		updateDistances()
+		task.wait(.1)
+	end
+end)
+
+for _,p in ipairs(Players:GetPlayers()) do
+
+	if p ~= LP then
+
+		p.CharacterAdded:Connect(function()
+			task.wait(.5)
+			makeDistance(p)
+		end)
+
+		if p.Character then
+			task.spawn(function()
+				task.wait(.5)
+				makeDistance(p)
+			end)
+		end
+	end
+end
+
+Players.PlayerAdded:Connect(function(p)
+
+	if p ~= LP then
+
+		p.CharacterAdded:Connect(function()
+			task.wait(.5)
+			makeDistance(p)
+		end)
+	end
+end)
+
+Players.PlayerRemoving:Connect(function(p)
+
+	if p.Character and distanceObjects[p.Character] then
+		distanceObjects[p.Character]:Destroy()
+		distanceObjects[p.Character] = nil
+	end
+end)
+
+DistanceButton.MouseButton1Click:Connect(function()
+
+	distanceEnabled = not distanceEnabled
+
+	if distanceEnabled then
+
+		DistanceButton.Text = "DISTANCE  ON"
+		DistanceButton.BackgroundColor3 = Color3.fromRGB(55,90,165)
+
+		for _,bg in pairs(distanceObjects) do
+			bg.Enabled = true
+		end
+
+	else
+
+		DistanceButton.Text = "DISTANCE  OFF"
+		DistanceButton.BackgroundColor3 = Color3.fromRGB(30,31,39)
+
+		for _,bg in pairs(distanceObjects) do
+			bg.Enabled = false
+		end
+	end
+end)
+
+--==================================================
+-- PLAYERS MENU
+--==================================================
+
+local PlayerMenu = Instance.new("Frame")
+PlayerMenu.Size = UDim2.fromOffset(420,440)
+PlayerMenu.Position = UDim2.new(.5,-210,.5,-220)
+PlayerMenu.BackgroundColor3 = Color3.fromRGB(15,16,21)
+PlayerMenu.BorderSizePixel = 0
+PlayerMenu.Visible = false
+PlayerMenu.Parent = Gui
+corner(PlayerMenu,18)
+stroke(PlayerMenu,.2)
+
+local PT = Instance.new("TextLabel")
+PT.Size = UDim2.new(1,-70,0,35)
+PT.Position = UDim2.fromOffset(18,12)
+PT.BackgroundTransparency = 1
+PT.Text = "👥  PLAYERS"
+PT.TextXAlignment = Enum.TextXAlignment.Left
+PT.TextColor3 = Color3.new(1,1,1)
+PT.TextSize = 22
+PT.Font = Enum.Font.GothamBold
+PT.Parent = PlayerMenu
+
+local PlayerClose = Instance.new("TextButton")
+PlayerClose.Size = UDim2.fromOffset(34,34)
+PlayerClose.Position = UDim2.new(1,-50,0,13)
+PlayerClose.BackgroundColor3 = Color3.fromRGB(30,31,38)
+PlayerClose.BorderSizePixel = 0
+PlayerClose.Text = "×"
+PlayerClose.TextColor3 = Color3.new(1,1,1)
+PlayerClose.TextSize = 21
+PlayerClose.Parent = PlayerMenu
+corner(PlayerClose,10)
+
+local PlayerScroll = Instance.new("ScrollingFrame")
+PlayerScroll.Size = UDim2.new(1,-30,1,-65)
+PlayerScroll.Position = UDim2.fromOffset(15,55)
+PlayerScroll.BackgroundColor3 = Color3.fromRGB(21,22,28)
+PlayerScroll.BorderSizePixel = 0
+PlayerScroll.ScrollBarThickness = 4
+PlayerScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+PlayerScroll.CanvasSize = UDim2.new()
+PlayerScroll.Parent = PlayerMenu
+corner(PlayerScroll,12)
+
+local PL = Instance.new("UIListLayout")
+PL.Padding = UDim.new(0,7)
+PL.HorizontalAlignment = Enum.HorizontalAlignment.Center
+PL.Parent = PlayerScroll
+
+local PP = Instance.new("UIPadding")
+PP.PaddingTop = UDim.new(0,8)
+PP.PaddingBottom = UDim.new(0,8)
+PP.PaddingLeft = UDim.new(0,8)
+PP.PaddingRight = UDim.new(0,8)
+PP.Parent = PlayerScroll
+
+local function refreshPlayers()
+
+	for _,x in ipairs(PlayerScroll:GetChildren()) do
+		if x:IsA("Frame") then
+			x:Destroy()
+		end
+	end
+
+	for _,p in ipairs(Players:GetPlayers()) do
+
+		if p ~= LP then
+
+			local Row = Instance.new("Frame")
+			Row.Size = UDim2.new(1,-4,0,55)
+			Row.BackgroundColor3 = Color3.fromRGB(29,30,37)
+			Row.BorderSizePixel = 0
+			Row.Parent = PlayerScroll
+			corner(Row,10)
+
+			local Name = Instance.new("TextLabel")
+			Name.Size = UDim2.new(1,-150,1,0)
+			Name.Position = UDim2.fromOffset(10,0)
+			Name.BackgroundTransparency = 1
+			Name.Text = p.Name
+			Name.TextXAlignment = Enum.TextXAlignment.Left
+			Name.TextColor3 = Color3.new(1,1,1)
+			Name.TextSize = 13
+			Name.Font = Enum.Font.GothamMedium
+			Name.TextTruncate = Enum.TextTruncate.AtEnd
+			Name.Parent = Row
+
+			local On = button(Row,"OFF")
+			On.Size = UDim2.fromOffset(55,34)
+			On.Position = UDim2.new(1,-125,.5,-17)
+
+			local Teleport = button(Row,"TP")
+			Teleport.Size = UDim2.fromOffset(55,34)
+			Teleport.Position = UDim2.new(1,-65,.5,-17)
+			Teleport.BackgroundColor3 = Color3.fromRGB(55,90,165)
+
+			playerStates[p] = playerStates[p] or false
+
+			if playerStates[p] then
+				On.Text = "ON"
+				On.BackgroundColor3 = Color3.fromRGB(48,135,72)
+			end
+
+			On.MouseButton1Click:Connect(function()
+
+				playerStates[p] = not playerStates[p]
+
+				if playerStates[p] then
+					On.Text = "ON"
+					On.BackgroundColor3 = Color3.fromRGB(48,135,72)
+				else
+					On.Text = "OFF"
+					On.BackgroundColor3 = Color3.fromRGB(115,50,55)
+				end
+			end)
+
+			Teleport.MouseButton1Click:Connect(function()
+
+				-- ON позволяет использовать TP для этого игрока.
+				if playerStates[p] then
+					tpTo(p)
+				else
+					On.Text = "ON"
+					On.BackgroundColor3 = Color3.fromRGB(48,135,72)
+					playerStates[p] = true
+
+					task.wait(.05)
+					tpTo(p)
+				end
+			end)
+		end
+	end
+end
+
+PlayersButton.MouseButton1Click:Connect(function()
+
+	refreshPlayers()
+
+	Main.Visible = false
+	PlayerMenu.Visible = true
+end)
+
+PlayerClose.MouseButton1Click:Connect(function()
+
+	PlayerMenu.Visible = false
+	Main.Visible = true
+end)
+
+Players.PlayerAdded:Connect(function()
+	if PlayerMenu.Visible then
+		task.wait(.1)
+		refreshPlayers()
+	end
+end)
+
+Players.PlayerRemoving:Connect(function(p)
+
+	playerStates[p] = nil
+
+	if PlayerMenu.Visible then
+		task.wait(.1)
+		refreshPlayers()
+	end
+end)
+
+--==================================================
+-- LOCK
+--==================================================
+
+LockButton.MouseButton1Click:Connect(function()
+
+	locked = not locked
+
+	if locked then
+		LockButton.Text = "🔒 LOCKED"
+		LockButton.BackgroundColor3 = Color3.fromRGB(95,52,58)
+	else
+		LockButton.Text = "🔓 UNLOCK"
+		LockButton.BackgroundColor3 = Color3.fromRGB(30,31,39)
+	end
+end)
+
+--==================================================
+-- MINIMIZE → SKULL
+--==================================================
+
+local Skull = Instance.new("TextButton")
+Skull.Size = UDim2.fromOffset(52,52)
+Skull.BackgroundColor3 = Color3.fromRGB(18,19,24)
+Skull.BorderSizePixel = 0
+Skull.Text = "💀"
+Skull.TextSize = 27
+Skull.Visible = false
+Skull.Parent = Gui
+corner(Skull,15)
+stroke(Skull,.2)
+
+local SkullScale = Instance.new("UIScale")
+SkullScale.Scale = 1
+SkullScale.Parent = Skull
+
+Minimize.MouseButton1Click:Connect(function()
+
+	if locked then
+		return
+	end
+
+	Skull.Position = UDim2.fromOffset(
+		Main.AbsolutePosition.X,
+		Main.AbsolutePosition.Y
+	)
+
+	Main.Visible = false
+	PlayerMenu.Visible = false
+	V3Frame.Visible = false
+	Skull.Visible = true
+end)
+
+Skull.MouseButton1Click:Connect(function()
+
+	Skull.Active = false
+
+	local originalPosition = Skull.Position
+
+	local grow = TweenService:Create(
+		SkullScale,
+		TweenInfo.new(.22,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
+		{Scale=100}
+	)
+
+	grow:Play()
+	grow.Completed:Wait()
+
+	SkullScale.Scale = 1
+	Skull.Visible = false
+
+	Main.Position = originalPosition
+	Main.Visible = true
+
+	Skull.Active = true
+end)
+
+--==================================================
+-- DRAG MAIN BY HEADER ONLY
+--==================================================
+
+local dragging = false
+local dragStart
+local startPos
+
+Header.InputBegan:Connect(function(input)
+
+	if locked then
+		return
+	end
+
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+	or input.UserInputType == Enum.UserInputType.Touch then
+
+		dragging = true
+		dragStart = input.Position
+		startPos = Main.Position
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+
+	if not dragging or locked then
+		return
+	end
+
+	if input.UserInputType == Enum.UserInputType.MouseMovement
+	or input.UserInputType == Enum.UserInputType.Touch then
+
+		local delta = input.Position-dragStart
+
+		Main.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset+delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset+delta.Y
+		)
+	end
+end)
+
+UIS.InputEnded:Connect(function(input)
+
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+	or input.UserInputType == Enum.UserInputType.Touch then
+
+		dragging = false
+	end
+end)
+
+--==================================================
+-- GET KEY
+--==================================================
+
+GetKey.MouseButton1Click:Connect(function()
+
+	if setclipboard then
+		setclipboard(DISCORD)
+		KeyStatus.Text = "✓ Discord скопирован"
+	else
+		KeyStatus.Text = DISCORD
+	end
+end)
+
+--==================================================
+-- CHECK KEY
+--==================================================
+
+Check.MouseButton1Click:Connect(function()
+
+	if KeyBox.Text == KEY then
+
+		KeyStatus.Text = "✓ KEY ACCEPTED"
+
+		notify("ALL SCRIPT MOG")
+
+		task.wait(1.45)
+
+		KeyFrame.Visible = false
+		Main.Visible = true
+
+	else
+
+		KeyStatus.Text = "✕ Неверный ключ"
+
+		task.spawn(function()
+
+			local e = Instance.new("TextLabel")
+			e.Size = UDim2.fromOffset(120,120)
+			e.Position = UDim2.new(.5,-60,.5,-60)
+			e.BackgroundTransparency = 1
+			e.Text = "🤡"
+			e.TextSize = 90
+			e.ZIndex = 200
+			e.Parent = Gui
+
+			task.wait(.5)
+
+			e:Destroy()
+		end)
+	end
+end)
